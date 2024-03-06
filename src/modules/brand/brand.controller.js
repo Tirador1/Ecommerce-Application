@@ -5,6 +5,7 @@ import Category from "../../../DB/models/category.model.js";
 import SubCategories from "../../../DB/models/sub-category.model.js";
 import cloudinaryConnection from "../../utils/cloudinary.js";
 import generateUniqueString from "../../utils/generateUniqueString.js";
+import { APIFeatures } from "../../utils/api-features.js";
 
 export const createBrand = async (req, res, next) => {
   const { name } = req.body;
@@ -153,14 +154,24 @@ export const getBrandsBySubCategory = async (req, res, next) => {
 export const getBrandsByCategory = async (req, res, next) => {
   const { categoryId } = req.params;
 
+  const { page, size, sort, ...search } = req.query;
+
   const subCategories = await SubCategories.find({ categoryId });
+
   const subCategoryIds = subCategories.map((subCategory) => subCategory._id);
+  const features = new APIFeatures(
+    req.query,
+    Brand.find({
+      subCategoryId: {
+        $in: subCategoryIds,
+      },
+    })
+  )
+    .filters()
+    .sort()
+    .paginate();
 
-  const brands = await Brand.find({ subCategoryId: { $in: subCategoryIds } });
-
-  if (!brands.length) {
-    return next({ cause: 404, message: "Brands not found" });
-  }
+  const brands = await features.query;
 
   res.status(200).json({
     message: "Brands fetched successfully",
