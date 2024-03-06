@@ -139,10 +139,28 @@ export const deleteBrand = async (req, res, next) => {
   });
 };
 
-export const getBrands = async (req, res, next) => {
+export const getBrandsBySubCategory = async (req, res, next) => {
   const { subCategoryId } = req.params;
 
   const brands = await Brand.find({ subCategoryId });
+
+  res.status(200).json({
+    message: "Brands fetched successfully",
+    Brands: brands,
+  });
+};
+
+export const getBrandsByCategory = async (req, res, next) => {
+  const { categoryId } = req.params;
+
+  const subCategories = await SubCategories.find({ categoryId });
+  const subCategoryIds = subCategories.map((subCategory) => subCategory._id);
+
+  const brands = await Brand.find({ subCategoryId: { $in: subCategoryIds } });
+
+  if (!brands.length) {
+    return next({ cause: 404, message: "Brands not found" });
+  }
 
   res.status(200).json({
     message: "Brands fetched successfully",

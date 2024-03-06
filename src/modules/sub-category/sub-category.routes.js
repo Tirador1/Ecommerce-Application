@@ -40,4 +40,10 @@ router.get(
   expressAsyncHandler(subCategory.getSubCategories)
 );
 
+router.get(
+  "/:subCategoryId",
+  authMiddleware(endPointsRoles.GET_SUB_CATEGORY),
+  expressAsyncHandler(subCategory.getSubCategory)
+);
+
 export default router;

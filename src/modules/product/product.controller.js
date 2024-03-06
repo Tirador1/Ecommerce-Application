@@ -203,12 +203,11 @@ export const deleteProduct = async (req, res, next) => {
 export const getAllProducts = async (req, res, next) => {
   const { brandId } = req.params;
   const { page, size, sort, ...search } = req.query;
-  console.log(page, size, sort, search);
   const features = new APIFeatures(req.query, Product.find({ brandId }))
-    // .sort(sort)
-    .pagination({ page, size });
-  // .search(search)
-  // .filters(search);
+    .sort(sort)
+    .pagination({ page, size })
+    .search(search)
+    .filters(search);
   const products = await features.mongooseQuery;
   res.status(200).json({ success: true, data: products });
 };

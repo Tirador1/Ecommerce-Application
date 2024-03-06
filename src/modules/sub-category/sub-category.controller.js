@@ -5,6 +5,7 @@ import Category from "../../../DB/models/category.model.js";
 import Brand from "../../../DB/models/brand.model.js";
 import cloudinaryConnection from "../../utils/cloudinary.js";
 import generateUniqueString from "../../utils/generateUniqueString.js";
+import { APIFeatures } from "../../utils/api-features.js";
 
 export const createSubCategory = async (req, res, next) => {
   const { name } = req.body;
@@ -138,12 +139,26 @@ export const deleteSubCategory = async (req, res, next) => {
 
 export const getSubCategories = async (req, res, next) => {
   const { categoryId } = req.params;
+  const { page, size, sort, ...search } = req.query;
 
-  const subCategories = await SubCategory.find({ categoryId }).populate(
-    "Brands"
-  );
+  const features = new APIFeatures(req.query, SubCategory.find({ categoryId }))
+    .filters()
+    .sort()
+    .limitFields()
+    .paginate();
 
-  res.status(200).json({
-    SubCategories: subCategories,
-  });
+  const subCategories = await features.query;
+
+  res.status(200).json({ message: "SubCategories", subCategories });
+};
+
+export const getSubCategory = async (req, res, next) => {
+  const { subCategoryId } = req.params;
+
+  const subCategory = await SubCategory.findById(subCategoryId);
+
+  if (!subCategory)
+    return next({ cause: 404, message: "SubCategory not found" });
+
+  res.status(200).json({ message: "SubCategory", subCategory });
 };

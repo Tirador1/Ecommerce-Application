@@ -5,6 +5,7 @@ import SubCategories from "../../../DB/models/sub-category.model.js";
 import Brands from "../../../DB/models/brand.model.js";
 import cloudinaryConnection from "../../utils/cloudinary.js";
 import generateUniqueString from "../../utils/generateUniqueString.js";
+import { APIFeatures } from "../../utils/api-features.js";
 
 export const createCategory = async (req, res, next) => {
   const { name } = req.body;
@@ -131,21 +132,17 @@ export const deleteCategory = async (req, res, next) => {
 };
 
 export const getCategories = async (req, res, next) => {
-  const categories = await Category.find().populate([
-    {
-      path: "subcategories",
-      populate: [
-        {
-          path: "Brands",
-        },
-      ],
-    },
-  ]);
+  const { page, size, sort, ...search } = req.query;
+  const features = new APIFeatures(req.query, Category.find())
+    .filters()
+    .sort()
+    .limitFields()
+    .paginate();
 
-  if (!categories) return next({ cause: 404, message: "No categories found" });
+  const categories = await features.query;
 
   res.status(200).json({
     message: "Categories fetched successfully",
-    Categories: categories,
+    categories,
   });
 };

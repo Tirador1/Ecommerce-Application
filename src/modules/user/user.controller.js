@@ -110,7 +110,15 @@ export const deleteUser = async (req, res, next) => {
     return next({ cause: 401, message: "Password is incorrect" });
   }
 
-  await User.findByIdAndDelete(_id);
+  await User.findByIdAndUpdate(_id, { isDeleted: true });
 
   res.status(200).json({ message: "User deleted successfully" });
+};
+
+export const getUserProfile = async (req, res, next) => {
+  const { _id } = req.user;
+
+  const user = await User.findById(_id, "-password");
+
+  res.status(200).json({ message: "User profile data", user });
 };

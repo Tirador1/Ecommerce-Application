@@ -38,7 +38,14 @@ router.get(
   "/:subCategoryId",
   authMiddleware(endPointsRoles.GET_BRANDS),
   validationMiddleware(authSchema.getBrandSchema),
-  expressAsyncHandler(Brand.getBrands)
+  expressAsyncHandler(Brand.getBrandsBySubCategory)
+);
+
+router.get(
+  "/:categoryId",
+  authMiddleware(endPointsRoles.GET_BRANDS),
+  validationMiddleware(authSchema.getBrandByCategorySchema),
+  expressAsyncHandler(Brand.getBrandsByCategory)
 );
 
 export default router;

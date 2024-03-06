@@ -35,3 +35,10 @@ export const getBrandSchema = {
   }),
   generalValidationRules,
 };
+
+export const getBrandByCategorySchema = {
+  params: Joi.object().keys({
+    categoryId: Joi.string().required(),
+  }),
+  generalValidationRules,
+};
