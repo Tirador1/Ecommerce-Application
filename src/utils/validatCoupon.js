@@ -10,8 +10,7 @@ export async function applyCouponValidation(code, userId) {
     coupon.couponStatus == "expired" ||
     DateTime.fromISO(coupon.validTill) < DateTime.now()
   )
-    console.log(DateTime.fromISO(coupon.validTill) < DateTime.now());
-  return { msg: "this coupon is  expired", status: 400 };
+    return { msg: "this coupon is  expired", status: 400 };
 
   if (DateTime.now() < DateTime.fromISO(coupon.validFrom))
     return { msg: "this coupon is not started yet", status: 400 };

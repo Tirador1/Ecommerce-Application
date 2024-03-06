@@ -167,9 +167,10 @@ export const getBrandsByCategory = async (req, res, next) => {
       },
     })
   )
-    .filters()
-    .sort()
-    .paginate();
+    .filters(search)
+    .sort(sort)
+    .search(search)
+    .pagination(page, size);
 
   const brands = await features.query;
 

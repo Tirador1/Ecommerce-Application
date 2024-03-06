@@ -134,10 +134,10 @@ export const deleteCategory = async (req, res, next) => {
 export const getCategories = async (req, res, next) => {
   const { page, size, sort, ...search } = req.query;
   const features = new APIFeatures(req.query, Category.find())
-    .filters()
-    .sort()
-    .limitFields()
-    .paginate();
+    .filters(search)
+    .sort(sort)
+    .search(search)
+    .pagination(page, size);
 
   const categories = await features.query;
 

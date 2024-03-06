@@ -142,10 +142,10 @@ export const getSubCategories = async (req, res, next) => {
   const { page, size, sort, ...search } = req.query;
 
   const features = new APIFeatures(req.query, SubCategory.find({ categoryId }))
-    .filters()
-    .sort()
-    .limitFields()
-    .paginate();
+    .filters(search)
+    .sort(sort)
+    .search(search)
+    .pagination(page, size);
 
   const subCategories = await features.query;
 

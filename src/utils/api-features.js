@@ -7,6 +7,9 @@ export class APIFeatures {
   }
 
   pagination({ page, size }) {
+    if (!page || !size) {
+      return this;
+    }
     const { limit, skip } = paginationFunction({ page, size });
     this.mongooseQuery = this.mongooseQuery.limit(limit).skip(skip);
     return this;
@@ -28,6 +31,9 @@ export class APIFeatures {
   }
 
   search(search) {
+    if (!search) {
+      return this;
+    }
     const queryFiler = {};
 
     if (search.title)
@@ -49,6 +55,9 @@ export class APIFeatures {
   }
 
   filters(filters) {
+    if (!filters) {
+      return this;
+    }
     const queryFilter = JSON.parse(
       JSON.stringify(filters).replace(
         /gt|gte|lt|lte|in|nin|eq|ne|regex/g,

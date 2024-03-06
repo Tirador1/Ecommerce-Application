@@ -3,6 +3,7 @@ import CouponUsers from "../../../DB/models/coupon-users.model.js";
 import User from "../../../DB/models/user.model.js";
 
 import { applyCouponValidation } from "../../utils/validatCoupon.js";
+import { APIFeatures } from "../../utils/api-features.js";
 
 export const addCoupon = async (req, res, next) => {
   const {
@@ -103,4 +104,47 @@ export const validteCoupon = async (req, res, next) => {
   }
 
   return res.status(200).json({ message: "coupon is valid", isCouponValid });
+};
+
+export const getAllValidCoupons = async (req, res, next) => {
+  const validCoupons = await Coupon.find({
+    validTill: { $gte: new Date() },
+    validFrom: { $lte: new Date() },
+  });
+
+  if (!validCoupons) {
+    return next({ message: "no valid coupons found", cause: 404 });
+  }
+
+  return res.status(200).json({ validCoupons });
+};
+
+export const getAllDisabledCoupons = async (req, res, next) => {
+  const disabledCoupons = await Coupon.find({
+    validTill: { $lt: new Date() },
+  });
+
+  if (!disabledCoupons) {
+    return next({ message: "no disabled coupons found", cause: 404 });
+  }
+
+  return res.status(200).json({ disabledCoupons });
+};
+
+export const GetCouponsByFeatures = async (req, res, next) => {
+  const { page, size, sort, ...search } = req.query;
+
+  const features = new APIFeatures(req.query, Coupon.find())
+    .filters(search)
+    .sort(sort)
+    .search(search)
+    .pagination(page, size);
+
+  const coupons = await features.mongooseQuery;
+
+  if (!coupons) {
+    return next({ message: "no coupons found", cause: 404 });
+  }
+
+  return res.status(200).json({ coupons });
 };

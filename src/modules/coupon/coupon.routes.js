@@ -22,4 +22,22 @@ router.post(
   expressAsyncHandler(Coupon.validteCoupon)
 );
 
+router.get(
+  "/validCoupons",
+  authMiddleware(endPointsRoles.GetCoupons),
+  expressAsyncHandler(Coupon.getAllValidCoupons)
+);
+
+router.get(
+  "/disalbedCoupons",
+  authMiddleware(endPointsRoles.GetCoupons),
+  expressAsyncHandler(Coupon.getAllDisabledCoupons)
+);
+
+router.get(
+  "/getByFeatures",
+  authMiddleware(endPointsRoles.GetCoupons),
+  expressAsyncHandler(Coupon.GetCouponsByFeatures)
+);
+
 export default router;
