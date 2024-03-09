@@ -40,4 +40,10 @@ router.get(
   expressAsyncHandler(Coupon.GetCouponsByFeatures)
 );
 
+router.get(
+  "/:couponId",
+  authMiddleware(endPointsRoles.GetCoupons),
+  expressAsyncHandler(Coupon.GetCouponById)
+);
+
 export default router;

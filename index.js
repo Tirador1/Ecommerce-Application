@@ -21,7 +21,3 @@ initiateApp(app, express);
 // - [22]  Get all reviews for specific product
 // - [23]  Disable/Enable Coupon API , if the coupon disabled it will not be used in any order
 // - [24]  add in coupon model fields(disabledAt, disabledBy, enabledBy, enabledAt)  to track the user who disabled the coupon and the date of disable
-
-// - [27]  Apply the API features in Coupons
-// - [28]  Get coupon by id
-// - [29]  Update  Coupon

@@ -148,3 +148,106 @@ export const GetCouponsByFeatures = async (req, res, next) => {
 
   return res.status(200).json({ coupons });
 };
+
+export const GetCouponById = async (req, res, next) => {
+  const { couponId } = req.params;
+
+  const coupon = await Coupon.findById(couponId);
+
+  if (!coupon) {
+    return next({ message: "coupon not found", cause: 404 });
+  }
+
+  return res.status(200).json({ coupon });
+};
+
+export const updateCoupon = async (req, res, next) => {
+  const { couponId } = req.params;
+  const {
+    code,
+    isFixed,
+    isPrecentage,
+    discount,
+    maxDiscount,
+    validFrom,
+    validTill,
+    Users,
+  } = req.body;
+
+  const { _id } = req.user;
+
+  const isCouponExist = await Coupon.findById(couponId);
+
+  if (!isCouponExist) {
+    return next({ message: "coupon not found", cause: 404 });
+  }
+
+  if (isFixed && isPrecentage) {
+    return next({ message: "select only one discount type", cause: 400 });
+  }
+
+  if (isFixed && discount > maxDiscount) {
+    return next({
+      message: "discount should be less than max discount",
+      cause: 400,
+    });
+  }
+
+  if (isPrecentage && discount > 100) {
+    return next({ message: "discount should be less than 100%", cause: 400 });
+  }
+
+  if (validFrom > validTill) {
+    return next({
+      message: "valid till should be greater than valid from",
+      cause: 400,
+    });
+  }
+
+  const updatedCoupon = await Coupon.findByIdAndUpdate(
+    couponId,
+    {
+      code,
+      isFixed,
+      isPrecentage,
+      discount,
+      maxDiscount,
+      validFrom,
+      validTill,
+      updatedBy: _id,
+    },
+    { new: true }
+  );
+
+  const userIds = [];
+  for (const user of Users) {
+    userIds.push(user.userId);
+  }
+
+  const isUsersExist = await User.find({ _id: { $in: userIds } });
+
+  if (isUsersExist.length !== userIds.length) {
+    return next({ message: "user not found", cause: 404 });
+  }
+
+  if (userIds.length > 0) {
+    for (const user of Users) {
+      const isUserCouponExist = await CouponUsers.findOne({
+        userId: user.userId,
+        couponId: updatedCoupon._id,
+      });
+
+      if (isUserCouponExist) {
+        return next({ message: "user already assigned", cause: 400 });
+      }
+
+      await CouponUsers.create({
+        userId: user.userId,
+        couponId: updatedCoupon._id,
+        maxUsage: user.maxUsage,
+      });
+    }
+  }
+
+  return res.status(200).json({ message: "coupon updated", updatedCoupon });
+};
