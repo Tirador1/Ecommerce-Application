@@ -1,4 +1,4 @@
-import { Router } from "express";
+import express from "express";
 import expressAsyncHandler from "express-async-handler";
 
 import * as orderController from "./order.controller.js";
@@ -7,7 +7,7 @@ import { authMiddleware } from "../../middlewares/auth.middleware.js";
 import { validationMiddleware } from "../../middlewares/validation.middleware.js";
 import { endPointsRoles } from "./order.endpoints.js";
 
-const router = Router();
+const router = express.Router();
 
 router.post(
   "/",
@@ -49,6 +49,19 @@ router.post(
   authMiddleware(endPointsRoles.PAY_ORDER),
   validationMiddleware(orderSchema.payStripeSchema),
   expressAsyncHandler(orderController.payStripe)
+);
+
+router.post(
+  "/stripeWebhook",
+  express.raw({ type: "application/json" }),
+  expressAsyncHandler(orderController.stripeWebhook)
+);
+
+router.post(
+  "/refund/:orderId",
+  authMiddleware(endPointsRoles.REFUND_ORDER),
+  validationMiddleware(orderSchema.refundOrderSchema),
+  expressAsyncHandler(orderController.refundOrder)
 );
 
 export default router;

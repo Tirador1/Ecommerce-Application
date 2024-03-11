@@ -41,3 +41,8 @@ export const payStripeSchema = Joi.object({
   orderId: Joi.string().required(),
   generalValidationRules,
 });
+
+export const refundOrderSchema = Joi.object({
+  orderId: Joi.string().required(),
+  generalValidationRules,
+});

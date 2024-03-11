@@ -11,4 +11,5 @@ export const endPointsRoles = {
   GET_ORDER: [systemRoles.SUPERADMIN, systemRoles.ADMIN, systemRoles.USER],
   DELIVER_ORDER: [systemRoles.DELEVRY_AGENT],
   PAY_ORDER: [systemRoles.SUPERADMIN, systemRoles.ADMIN, systemRoles.USER],
+  REFUND_ORDER: [systemRoles.SUPERADMIN, systemRoles.ADMIN],
 };

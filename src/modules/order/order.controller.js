@@ -3,7 +3,13 @@ import Product from "../../../DB/models/product.model.js";
 import Coupon from "../../../DB/models/coupon.model.js";
 import Cart from "../../../DB/models/cart.model.js";
 import couponUsersModel from "../../../DB/models/coupon-users.model.js";
-import { createCheckoutSession } from "../paymentHandler/stripe.js";
+import {
+  createCheckoutSession,
+  createStripeCoupon,
+  createPaymentIntent,
+  confirmPaymentIntent,
+  refundPaymentIntent,
+} from "../paymentHandler/stripe.js";
 
 export const createOrder = async (req, res, next) => {
   const {
@@ -297,34 +303,83 @@ export const payStripe = async (req, res, next) => {
 
   const sessionObject = {
     customer_email: req.user.email,
-    metadata: {
-      orderId: order._id.toString(),
-    },
-    discount: [],
+    metadata: { orderId: order._id.toString() },
+    discounts: [],
     line_items,
   };
 
   if (order.coupon) {
     const coupon = await Coupon.findById(order.coupon);
-    console.log(coupon);
+    let couponApplied;
     if (coupon.isFixed) {
-      sessionObject.discount.push({
-        amount: coupon.discount * 100,
+      couponApplied = await createStripeCoupon({
+        name: coupon.name,
+        amount_off: coupon.discount * 100,
       });
     } else if (coupon.isPercentage) {
       if (order.totalPrice > coupon.maxDiscount * (1 / coupon.discount)) {
-        sessionObject.discount.push({
-          amount: coupon.maxDiscount * 100,
+        couponApplied = await createStripeCoupon({
+          name: coupon.name,
+          amount_off: coupon.maxDiscount * 100,
         });
       } else {
-        sessionObject.discount.push({
-          percentage: coupon.discount * 100,
+        couponApplied = await createStripeCoupon({
+          name: coupon.name,
+          percent_off: coupon.discount * 100,
         });
       }
     }
+
+    sessionObject.discounts.push({ coupon: couponApplied.id });
   }
 
   const session = await createCheckoutSession(sessionObject);
 
+  const paymentIntent = await createPaymentIntent(order.totalPrice);
+
+  order.paymentIntentId = paymentIntent.id;
+  await order.save();
+
   return res.status(200).json({ session });
+};
+
+export const stripeWebhook = async (req, res, next) => {
+  const orderId = req.body.data.object.metadata.orderId;
+
+  const confirmedOrder = await Order.findById(orderId);
+  if (!confirmedOrder) return next({ message: "Order not found", cause: 404 });
+
+  await confirmPaymentIntent({
+    paymentIntentId: confirmedOrder.paymentIntentId,
+  });
+
+  confirmedOrder.orederStatus = "Paid";
+  confirmedOrder.paymentMethod = "stripe";
+  confirmedOrder.paidAt = Date.now();
+  confirmedOrder.isPaid = true;
+  await confirmedOrder.save();
+
+  return res.status(200).json({ message: "Webhook received" });
+};
+
+export const refundOrder = async (req, res, next) => {
+  const { orderId } = req.params;
+
+  const findOrder = await Order.findOne({ _id: orderId, orederStatus: "Paid" });
+  if (!findOrder)
+    return next({
+      message: "Order not found or cannot be refunded",
+      cause: 404,
+    });
+
+  const refund = await refundPaymentIntent({
+    paymentIntentId: findOrder.paymentIntentId,
+  });
+
+  findOrder.orederStatus = "Refunded";
+  await findOrder.save();
+
+  res
+    .status(200)
+    .json({ message: "Order refunded successfully", order: refund });
 };
