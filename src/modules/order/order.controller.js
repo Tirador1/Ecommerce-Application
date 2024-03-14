@@ -1,3 +1,5 @@
+import { DateTime } from "luxon";
+
 import Order from "../../../DB/models/order.model.js";
 import Product from "../../../DB/models/product.model.js";
 import Coupon from "../../../DB/models/coupon.model.js";
@@ -62,11 +64,22 @@ export const createOrder = async (req, res, next) => {
   totalPrice += shippingPrice;
 
   if (couponId) {
-    const isCouponExist = await Coupon.findById(couponId);
+    const isCouponExist = await Coupon.findOne({
+      _id: couponId,
+      couponStatus: "active",
+    });
     if (!isCouponExist) {
       return next({
         cause: 404,
         message: "Coupon not found",
+      });
+    }
+
+    const isCouponValidNow = isCouponExist.validTill > DateTime.now();
+    if (!isCouponValidNow) {
+      return next({
+        cause: 400,
+        message: "Coupon is expired",
       });
     }
 
@@ -158,11 +171,22 @@ export const convertCartToOrder = async (req, res, next) => {
   totalPrice += shippingPrice;
 
   if (couponId) {
-    const isCouponExist = await Coupon.findById(couponId);
+    const isCouponExist = await Coupon.findOne({
+      _id: couponId,
+      couponStatus: "active",
+    });
     if (!isCouponExist) {
       return next({
         cause: 404,
         message: "Coupon not found",
+      });
+    }
+
+    const isCouponValidNow = isCouponExist.validTill > DateTime.now();
+    if (!isCouponValidNow) {
+      return next({
+        cause: 400,
+        message: "Coupon is expired",
       });
     }
 
@@ -267,7 +291,7 @@ export const deleverOrder = async (req, res, next) => {
   }
 
   order.isDelivered = true;
-  order.deliveredAt = Date.now();
+  order.deliveredAt = DateTime.now();
   order.status = "Delivered";
   order.deliveredBy = req.user._id;
 
@@ -355,7 +379,7 @@ export const stripeWebhook = async (req, res, next) => {
 
   confirmedOrder.orederStatus = "Paid";
   confirmedOrder.paymentMethod = "stripe";
-  confirmedOrder.paidAt = Date.now();
+  confirmedOrder.paidAt = DateTime.now();
   confirmedOrder.isPaid = true;
   await confirmedOrder.save();
 
@@ -382,4 +406,51 @@ export const refundOrder = async (req, res, next) => {
   res
     .status(200)
     .json({ message: "Order refunded successfully", order: refund });
+};
+
+export const cancelOrder = async (req, res, next) => {
+  const { orderId } = req.params;
+
+  const findOrder = await Order.findOne({
+    _id: orderId,
+    orederStatus: { $in: ["Pending", "Paid"] },
+  });
+  if (!findOrder)
+    return next({
+      message: "Order not found or cannot be cancelled",
+      cause: 404,
+    });
+
+  if (findOrder.paidAt < DateTime.now().minus({ days: 1 }).toJSDate()) {
+    return next({
+      message: "Order cannot be cancelled after 24 hours of payment",
+      cause: 400,
+    });
+  }
+
+  if (findOrder.isPaid) {
+    const refund = await refundPaymentIntent({
+      paymentIntentId: findOrder.paymentIntentId,
+    });
+
+    findOrder.orederStatus = "Refunded";
+    findOrder.isRefunded = true;
+    findOrder.refundedAt = DateTime.now();
+    findOrder.refundedBy = req.user._id;
+
+    await findOrder.save();
+
+    return res.status(200).json({
+      message: "Order cancelled and refunded successfully",
+      order: refund,
+    });
+  }
+
+  findOrder.orederStatus = "Cancelled";
+  findOrder.cancelledAt = DateTime.now();
+  findOrder.cancelledBy = req.user._id;
+
+  await findOrder.save();
+
+  res.status(200).json({ message: "Order cancelled successfully" });
 };

@@ -4,6 +4,7 @@ import User from "../../../DB/models/user.model.js";
 
 import { applyCouponValidation } from "../../utils/validatCoupon.js";
 import { APIFeatures } from "../../utils/api-features.js";
+import { DateTime } from "luxon";
 
 export const addCoupon = async (req, res, next) => {
   const {
@@ -250,4 +251,26 @@ export const updateCoupon = async (req, res, next) => {
   }
 
   return res.status(200).json({ message: "coupon updated", updatedCoupon });
+};
+
+export const changeCouponStatus = async (req, res, next) => {
+  const { couponId } = req.params;
+
+  const coupon = await Coupon.findById(couponId);
+
+  if (!coupon) {
+    return next({ message: "coupon not found", cause: 404 });
+  }
+
+  coupon.couponStatus = coupon.couponStatus === "valid" ? "disabled" : "valid";
+  coupon.couponStatus === "valid"
+    ? (coupon.enabledBy = req.user._id)
+    : (coupon.disabledBy = req.user._id);
+  coupon.couponStatus === "valid"
+    ? (coupon.enabledAt = DateTime.now())
+    : (coupon.disabledAt = DateTime.now());
+
+  await coupon.save();
+
+  return res.status(200).json({ message: "coupon status changed", coupon });
 };

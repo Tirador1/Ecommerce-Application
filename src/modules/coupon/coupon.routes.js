@@ -46,4 +46,10 @@ router.get(
   expressAsyncHandler(Coupon.GetCouponById)
 );
 
+router.put(
+  "/changeCouponStatus/:couponId",
+  authMiddleware(endPointsRoles.changeCouponStatus),
+  expressAsyncHandler(Coupon.changeCouponStatus)
+);
+
 export default router;

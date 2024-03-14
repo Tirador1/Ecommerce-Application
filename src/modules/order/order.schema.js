@@ -46,3 +46,8 @@ export const refundOrderSchema = Joi.object({
   orderId: Joi.string().required(),
   generalValidationRules,
 });
+
+export const cancelOrderSchema = Joi.object({
+  orderId: Joi.string().required(),
+  generalValidationRules,
+});

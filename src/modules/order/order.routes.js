@@ -34,7 +34,7 @@ router.get(
   "/:orderId",
   authMiddleware(endPointsRoles.GET_ORDER),
   validationMiddleware(orderSchema.getOrderSchema),
-  orderController.getOrder
+  expressAsyncHandler(orderController.getOrder)
 );
 
 router.put(
@@ -62,6 +62,13 @@ router.post(
   authMiddleware(endPointsRoles.REFUND_ORDER),
   validationMiddleware(orderSchema.refundOrderSchema),
   expressAsyncHandler(orderController.refundOrder)
+);
+
+router.post(
+  "/cancel/:orderId",
+  authMiddleware(endPointsRoles.CANCEL_ORDER),
+  validationMiddleware(orderSchema.cancelOrderSchema),
+  expressAsyncHandler(orderController.cancelOrder)
 );
 
 export default router;
